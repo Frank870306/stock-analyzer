@@ -39,6 +39,18 @@ if ticker_input:
             rsi_calc = RSIIndicator(close=close_prices)
             rsi = rsi_calc.rsi()
 
+            # RSI 介紹 - 使用 expander
+            with st.expander("📘 點擊查看 RSI 介紹"):
+                st.markdown("""
+                **RSI（相對強弱指標）** 是一個常用的技術指標，用來評估股票是否過度買進或賣出。其值範圍從 0 到 100，當 RSI 低於 30 時，通常表示股票可能處於過度賣出的區域，反之當 RSI 高於 70 時，則可能表示過度買進。
+
+                - **RSI < 30**：可能是過度賣出，建議進場觀察。
+                - **RSI > 70**：可能是過度買進，建議謹慎投資。
+                - **30 < RSI < 70**：一般為正常區間，觀望中。
+
+                RSI 幫助投資人識別潛在的買入或賣出時機。
+                """)
+
             # 股價圖表
             st.subheader("📈 股價走勢圖")
             fig = go.Figure()
@@ -71,28 +83,16 @@ if ticker_input:
             else:
                 st.error("無法計算有效的 RSI，請檢查資料來源。")
 
-            # 熱門推薦股票
+            # 推薦熱門股票（範例：以成交量排序前 3 大）
             st.subheader("🔍 熱門推薦股票")
             try:
-                # 股票代碼可以自行擴展
-                symbols = ['2330.TW', '2303.TW', '2412.TW', '6505.TW', '1301.TW', '1101.TW', '2882.TW', '2002.TW']
-                
-                # 儲存所有股票的成交量資料
-                volume_data = {}
-                for symbol in symbols:
-                    stock_data = yf.download(symbol, period="1d", interval="1d")
-                    # 取最新的成交量
-                    volume_data[symbol] = stock_data['Volume'].iloc[-1] if not stock_data.empty else 0
-
-                # 依成交量排序，取前 3 名
-                sorted_volumes = sorted(volume_data.items(), key=lambda x: x[1], reverse=True)[:3]
-                
-                for symbol, volume in sorted_volumes:
+                hot_df = yf.download(["2330.TW", "2303.TW", "2412.TW"], period="1d")["Volume"].iloc[-1].sort_values(ascending=False)
+                for symbol, volume in hot_df.items():
                     s_code = symbol.split('.')[0]
                     s_name = twstock.codes[s_code].name if s_code in twstock.codes else ''
                     st.write(f"{s_code} - {s_name}（成交量：{volume}）")
-            except Exception as e:
-                st.warning(f"熱門股票資料讀取失敗：{str(e)}")
+            except:
+                st.warning("熱門股票資料讀取失敗")
 
     except Exception as e:
         st.error(f"發生錯誤：{str(e)}")
