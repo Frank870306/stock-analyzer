@@ -29,13 +29,38 @@ RSI 是用來判斷股票是否處於「超買」或「超賣」狀態的技術�
 """
     )
 
-ticker_input = st.text_input("請輸入台股代碼（例如 2330）")
+# 我的最愛功能
+st.sidebar.header("⭐ 我的最愛")
+fav_input = st.sidebar.text_input("輸入股票代碼（如 2330）")
+if "fav_list" not in st.session_state:
+    st.session_state.fav_list = []
+
+if st.sidebar.button("加入最愛"):
+    if fav_input and fav_input not in st.session_state.fav_list:
+        st.session_state.fav_list.append(fav_input)
+
+if st.session_state.fav_list:
+    st.sidebar.markdown("### 快速查詢")
+    for fav_code in st.session_state.fav_list:
+        if st.sidebar.button(fav_code):
+            st.session_state["selected_fav"] = fav_code
+
+# 日期範圍選擇
+st.sidebar.header("📅 選擇資料區間")
+period_option = st.sidebar.selectbox(
+    "請選擇查詢區間", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=2
+)
+
+# 股票輸入（優先讀取最愛選擇）
+ticker_input = st.session_state.get("selected_fav", "") or st.text_input(
+    "請輸入台股代碼（例如 2330）"
+)
 
 if ticker_input:
     try:
         code = ticker_input.strip()
         ticker_symbol = f"{code}.TW"
-        data = yf.download(ticker_symbol, period="6mo", interval="1d")
+        data = yf.download(ticker_symbol, period=period_option, interval="1d")
 
         if data.empty:
             st.error("查無此代碼，請重新輸入。")
@@ -103,24 +128,9 @@ if ticker_input:
             else:
                 st.error("無法計算有效的 RSI，請檢查資料來源。")
 
-            # 推薦熱門股票（範例：以成交量排序前 3 大）
-            st.subheader("🔍 熱門推薦股票")
-            try:
-                hot_df = (
-                    yf.download(["2330.TW", "2303.TW", "2412.TW"], period="1d")[
-                        "Volume"
-                    ]
-                    .iloc[-1]
-                    .sort_values(ascending=False)
-                )
-                for symbol, volume in hot_df.items():
-                    s_code = symbol.split(".")[0]
-                    s_name = (
-                        twstock.codes[s_code].name if s_code in twstock.codes else ""
-                    )
-                    st.write(f"{s_code} - {s_name}（成交量：{volume}）")
-            except:
-                st.warning("熱門股票資料讀取失敗")
+        # 重置選擇狀態，避免連續點擊
+        if "selected_fav" in st.session_state:
+            del st.session_state["selected_fav"]
 
     except Exception as e:
         st.error(f"發生錯誤：{str(e)}")
