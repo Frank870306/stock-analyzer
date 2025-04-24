@@ -1,48 +1,31 @@
 import streamlit as st
 import yfinance as yf
-import pandas as pd
-import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from ta.momentum import RSIIndicator
 import twstock
-from datetime import datetime
-import base64
 from io import BytesIO
 
+# 設定頁面配置
 st.set_page_config(page_title="台股即時分析工具", layout="centered")
 st.title("台股即時分析工具")
 
-st.markdown(
-    "輸入台股代碼（例如：**2330** 為台積電），系統將抓取技術指標並評估是否為值得投資的時機。"
-)
-
-# RSI 簡介區塊
-with st.expander("📘 RSI 是什麼？（點我查看）"):
-    st.markdown(
-        """
-**RSI（相對強弱指數）簡介：**  
-RSI 是用來判斷股票是否處於「超買」或「超賣」狀態的技術指標。  
-
-- **RSI < 30**：可能過度賣出，有機會反彈（可觀察是否進場）  
-- **RSI > 70**：可能過度買入，有下跌風險（適合考慮賣出）  
-- **30 ≤ RSI ≤ 70**：屬於正常波動範圍，建議觀望  
-"""
-    )
-
-# 我的最愛功能
+# 儲存我的最愛
 st.sidebar.header("⭐ 我的最愛")
-fav_input = st.sidebar.text_input("輸入股票代碼（如 2330）")
+fav_input = st.sidebar.text_input("輸入股票代碼（如 2330）", key="fav_input")
 if "fav_list" not in st.session_state:
     st.session_state.fav_list = []
 
-if st.sidebar.button("加入最愛"):
-    if fav_input and fav_input not in st.session_state.fav_list:
-        st.session_state.fav_list.append(fav_input)
+if fav_input:
+    if st.sidebar.button("加入最愛"):
+        if fav_input and fav_input not in st.session_state.fav_list:
+            st.session_state.fav_list.append(fav_input.strip())
 
 if st.session_state.fav_list:
     st.sidebar.markdown("### 快速查詢")
-    for fav_code in st.session_state.fav_list:
-        if st.sidebar.button(fav_code):
+    fav_cols = st.sidebar.columns(3)
+    for i, fav_code in enumerate(st.session_state.fav_list):
+        col = fav_cols[i % 3]
+        if col.button(fav_code):
             st.session_state["selected_fav"] = fav_code
 
 # 日期範圍選擇
@@ -51,12 +34,30 @@ period_option = st.sidebar.selectbox(
     "請選擇查詢區間", ["1mo", "3mo", "6mo", "1y", "2y", "5y"], index=2
 )
 
+# 儲存備註
+if "notes" not in st.session_state:
+    st.session_state.notes = {}
+
 # 股票輸入（優先讀取最愛選擇）
 ticker_input = st.session_state.get("selected_fav", "") or st.text_input(
     "請輸入台股代碼（例如 2330）"
 )
 
+# 備註區塊
 if ticker_input:
+    with st.sidebar.expander("📋 記錄備註"):
+        note_input = st.text_area("輸入備註內容", value="", height=150)
+        if st.sidebar.button("儲存備註"):
+            if note_input:
+                st.session_state.notes[ticker_input] = note_input
+                st.sidebar.success("備註儲存成功！")
+            else:
+                st.sidebar.warning("備註內容不可為空！")
+
+    # 顯示儲存的備註（側邊欄）
+    if ticker_input in st.session_state.notes:
+        st.sidebar.markdown(f"### 目前備註：\n{st.session_state.notes[ticker_input]}")
+
     try:
         code = ticker_input.strip()
         ticker_symbol = f"{code}.TW"
