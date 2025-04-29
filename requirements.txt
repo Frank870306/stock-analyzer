@@ -3,5 +3,3 @@ yfinance
 twstock
 ta
 plotly
-json
-os
