@@ -1,0 +1,5 @@
+git status
+git add .
+git commit -m "更新說明"
+git pull --rebase origin main
+git push origin main
