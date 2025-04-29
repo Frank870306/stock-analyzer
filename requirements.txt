@@ -3,3 +3,4 @@ yfinance
 twstock
 ta
 plotly
+lxml
