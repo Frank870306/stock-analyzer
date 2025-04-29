@@ -46,7 +46,9 @@ if "selected_code" not in st.session_state:
 # 載入資料
 load_data()
 
-st.set_page_config(page_title="台股即時分析工具", layout="centered")
+# ⚡【只改這行】layout 改成 wide
+st.set_page_config(page_title="台股即時分析工具", layout="wide")
+
 st.title("台股即時分析工具")
 
 st.markdown(
