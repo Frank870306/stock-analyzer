@@ -183,7 +183,7 @@ if ticker_input:
                     del st.session_state.notes[code]
                     save_data()  # 儲存資料
                     st.success(f"✅ {code} 的備註已刪除！")
-                    st.experimental_rerun()  # 強制刷新頁面，立即反映備註刪除
+                    st.rerun()  # 強制刷新頁面，立即反映備註刪除
             else:
                 st.warning("尚無備註")
 
