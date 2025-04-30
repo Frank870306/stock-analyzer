@@ -5,6 +5,8 @@ from ta.momentum import RSIIndicator
 import plotly.graph_objects as go
 import json
 import os
+from fpdf import FPDF
+import time
 
 # 儲存檔案路徑
 FAVORITES_FILE = "favorites.json"
@@ -86,7 +88,6 @@ if st.session_state.fav_list:
             st.session_state.fav_list.remove(fav_code)
             save_data()  # 儲存資料
             st.success(f"✅ {fav_code} 已從最愛中移除！")
-            st.rerun()  # 強制刷新頁面，立即反映最愛列表更新
 
 # 股票輸入（優先讀取 selected_code）
 ticker_input = st.text_input(
@@ -168,7 +169,6 @@ if ticker_input:
 
             st.subheader("📝 個股備註")
             with st.form(f"note_form_{code}"):
-
                 note_input = st.text_area("輸入備註", value=current_note, key=note_key)
                 submitted = st.form_submit_button("💾 儲存備註")
                 if submitted:
@@ -182,30 +182,36 @@ if ticker_input:
                 # 顯示單一備註清除按鈕
                 if st.button("🗑️ 清除此備註", key=f"clear_note_{code}"):
                     del st.session_state.notes[code]
-                    save_data()  # 儲存資料
-                    st.success(f"✅ {code} 的備註已刪除！")
-                    st.rerun()  # 強制刷新頁面，立即反映備註刪除
-            else:
-                st.warning("尚無備註")
+                    save_data()
 
-            st.subheader("📊 投資評估")
-            if not rsi.empty:
-                latest_rsi = rsi.iloc[-1]
-                if latest_rsi < 30:
-                    st.success("RSI 低於 30：可能是超賣區，考慮進場")
-                elif latest_rsi > 70:
-                    st.warning("RSI 高於 70：可能是超買區，謹慎投資")
-                else:
-                    st.info("RSI 在正常區間：觀望中")
-            else:
-                st.error("無法計算有效的 RSI，請檢查資料來源。")
+            # 生成 PDF 報告
+            if st.button("📄 生成 PDF 報告"):
+                pdf = FPDF()
+                pdf.add_page()
 
-            st.subheader("🖱️ 分享分析結果")
-            analysis_summary = (
-                f"股票代碼：{code}\n股票名稱：{stock_name}\n產業別：{stock_group}\nRSI：{rsi.iloc[-1]:.2f}"
-                if not rsi.empty
-                else "無法計算 RSI"
-            )
-            st.code(analysis_summary, language="markdown")
+                # 設定中文字體
+                pdf.add_font(
+                    "ArialUnicode",
+                    "",
+                    "/usr/share/fonts/truetype/msttcorefonts/Arial.ttf",
+                    uni=True,
+                )
+                pdf.set_font("ArialUnicode", "", 12)
+
+                pdf.cell(200, 10, txt=f"股票代碼: {code}", ln=True)
+                pdf.cell(200, 10, txt=f"股票名稱: {stock_name}", ln=True)
+                pdf.cell(200, 10, txt=f"產業別: {stock_group}", ln=True)
+                pdf.cell(200, 10, txt=f"上市日期: {stock_start}", ln=True)
+                pdf.cell(200, 10, txt=f"RSI 指標: {rsi.iloc[-1]:.2f}", ln=True)
+
+                # 儲存 PDF 檔案
+                pdf_output_path = f"{code}_stock_report.pdf"
+                pdf.output(pdf_output_path)
+                st.success(f"PDF 報告已生成！請[下載報告]({pdf_output_path})")
+
+        # 休息 10 秒後自動刷新
+        time.sleep(10)
+        st.rerun()
+
     except Exception as e:
-        st.error(f"發生錯誤：{str(e)}")
+        st.error(f"錯誤: {str(e)}")

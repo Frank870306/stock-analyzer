@@ -4,3 +4,4 @@ twstock
 ta
 plotly
 lxml
+fpdf
