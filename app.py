@@ -134,7 +134,7 @@ if "last_updated" not in st.session_state:
 # 如果距離上次更新超過 UPDATE_INTERVAL，則重新載入頁面
 if (time.time() - st.session_state.last_updated) >= UPDATE_INTERVAL:
     st.session_state.last_updated = time.time()
-    st.experimental_rerun()  # 重新載入頁面，實現自動更新功能
+    st.rerun()  # 重新載入頁面，實現自動更新功能
 
 if ticker_input:
     try:
@@ -172,6 +172,8 @@ if ticker_input:
 
             if st.button("📄 生成 PDF 報告"):
                 st.write("正在生成 PDF...")
+
+                # 創建 PDF 報告
                 pdf = FPDF()
                 pdf.add_page()
                 pdf.add_font("msjh", fname=FONT_PATH, uni=True)
@@ -213,7 +215,7 @@ if ticker_input:
                             mime="application/pdf",
                         )
                 else:
-                    st.error("PDF 生成失敗，請再試一次！")
+                    st.error(f"PDF 生成失敗，檢查路徑：{pdf_output_path}")
 
     except Exception as e:
         st.error(f"錯誤: {str(e)}")
